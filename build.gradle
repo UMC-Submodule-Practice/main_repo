@@ -24,10 +24,10 @@ repositories {
 }
 
 dependencies {
-//	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
-//	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -37,11 +37,29 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-processResources.dependsOn('copySecret')
-
+// 서브모듈에서 설정 파일을 리소스 디렉토리로 복사하는 작업
 tasks.register('copySecret', Copy) {
-	from './config' // 서브 모듈 디렉토리 경로
+	from 'config' // 서브 모듈 디렉토리 경로
 	include "*.yml"  // 설정 파일 복사
-	into 'src/main/resources'  // 붙여넣을 위치
+	into 'src/main/resources/application-config'  // 붙여넣을 위치
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE // 중복 파일 처리 전략 설정
 }
 
+// `processResources` 작업이 `copySecret` 작업에 의존하도록 설정
+tasks.named('processResources') {
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE // 중복 파일 처리 전략 설정
+	dependsOn 'copySecret' // copySecret 작업이 먼저 실행되도록 설정
+}
+
+sourceSets {
+	main {
+		resources {
+			srcDirs "config"
+		}
+	}
+}
+
+// Spring Boot 메인 클래스 설정
+springBoot {
+	mainClass = 'com.example.MainApplication'
+}
