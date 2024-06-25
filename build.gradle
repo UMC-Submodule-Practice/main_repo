@@ -45,3 +45,10 @@ tasks.register('copySecret', Copy) {
 	into 'src/main/resources'  // 붙여넣을 위치
 }
 
+sourceSets {
+	main {
+		resources {
+			srcDirs "config"
+		}
+	}
+}
