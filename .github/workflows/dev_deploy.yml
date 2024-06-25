@@ -12,7 +12,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  spring-boot-ci-cd:
+  cicd_workflow:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -35,6 +35,9 @@ jobs:
           mkdir -p src/main/resources/application-config
           cp -r ./config/* src/main/resources/application-config/
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
@@ -54,28 +57,4 @@ jobs:
       - name: Docker Image Build
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }} .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }} ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
-
-      - name: Docker Login
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Docker Hub Push
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
-
-      # - name: Docker Deploy In EC2
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.AWS_EC2_HOST }}
-      #     username: ec2-user
-      #     key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-      #     script: |
-      #       docker pull ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
-      #       docker stop springboot || true
-      #       docker rm springboot || true
-      #       docker run --name springboot --rm -d -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
-      #       docker system prune -f
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }} ${{ secrets.DOCKERH
