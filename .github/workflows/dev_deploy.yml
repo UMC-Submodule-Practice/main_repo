@@ -56,8 +56,8 @@ jobs:
 
       - name: Docker Image Build
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }} .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }} ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }} .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }} ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
 
       - name: Docker Login
         uses: docker/login-action@v3
@@ -67,8 +67,8 @@ jobs:
 
       - name: Docker Hub Push
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/springboot:${{ steps.set_current_date.outputs.version }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
 
       # - name: Docker Deploy In EC2
       #   uses: appleboy/ssh-action@v1.0.3
@@ -77,8 +77,8 @@ jobs:
       #     username: ec2-user
       #     key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
       #     script: |
-      #       docker pull ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
+      #       docker pull ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
       #       docker stop springboot || true
       #       docker rm springboot || true
-      #       docker run --name springboot --rm -d -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/springboot:latest
+      #       docker run --name springboot --rm -d -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
       #       docker system prune -f
