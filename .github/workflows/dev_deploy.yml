@@ -1,18 +1,31 @@
-name: SpringBoot Application CI-CD with Gradle
+name: Continuous Integration
 
 on:
   push:
-    branches: ["dev"]
+    # develop, prod를 제외한 모든 브랜치에 push 이벤트 시 동작
+    branches-ignore:
+      - develop
+      - prod
+  # develop 브랜치에 대해 pr 이벤트 시 동작
   pull_request:
-    branches: ["dev"]
+    branches: ["develop"]
 
 permissions:
   contents: read
   checks: write
   pull-requests: write
 
+
+env:
+  # Docker Hub 사용
+  REGISTRY: docker.io
+  REPOSITORY: ${{ github.repository }}
+  IMAGE_TAG: ci-${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}
+  REGISTRY_USERNAME: ${{ github.actor }}
+
 jobs:
-  cicd_workflow:
+  Build:
+    name: Build & Delivery
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,11 +34,11 @@ jobs:
           token: ${{ secrets.ACTION_TOKEN }}
           submodules: true
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: 17
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
@@ -54,10 +67,16 @@ jobs:
         id: set_current_date
         run: echo "version=$(date '+%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
+      - name: Set Docker Image Tag
+        id: set_docker_image_tag
+        run: |
+          echo "IMAGE_TAG=${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}" >> $GITHUB_ENV
+          echo "SPRING_IMAGE=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}" >> $GITHUB_ENV
+
       - name: Docker Image Build
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }} .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }} ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ env.IMAGE_TAG }} .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ env.IMAGE_TAG }} ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
 
       - name: Docker Login
         uses: docker/login-action@v3
@@ -69,16 +88,3 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/practice:${{ steps.set_current_date.outputs.version }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
-
-      # - name: Docker Deploy In EC2
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.AWS_EC2_HOST }}
-      #     username: ec2-user
-      #     key: ${{ secrets.AWS_EC2_PRIVATE_KEY }}
-      #     script: |
-      #       docker pull ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
-      #       docker stop springboot || true
-      #       docker rm springboot || true
-      #       docker run --name springboot --rm -d -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/practice:latest
-      #       docker system prune -f
